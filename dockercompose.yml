@@ -1,0 +1,42 @@
+version: "3"
+services:
+  elasticsearch:
+    image: elasticsearch:latest
+    networks:
+      - logging
+    volumes:
+      - /usr/share/elasticsearch/data
+
+  logstash:
+    image:  registry.cn-hangzhou.aliyuncs.com/zmf/logstash:latest
+    networks:
+      - logging
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: kibana:latest
+    ports:
+      - 5601:5601
+    networks:
+      - logging
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+
+  logspout:
+    image: amouat/logspout-logstash:latest
+    networks:
+      - logging
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - ROUTE_URIS=logstash+tcp://logstash:514
+    deploy:
+      mode: global
+    depends_on:
+      - logstash
+
+networks:
+  logging:
